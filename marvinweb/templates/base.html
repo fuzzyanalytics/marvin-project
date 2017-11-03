@@ -11,11 +11,9 @@
     <a href="{% url 'dashboard' %}"><span class="logo">Marvinweb</span></a>
     {% if request.user.is_authenticated %}
     <ul class="menu">
-        <li {%if section==
-        "dashboard" %}class="selected"{% endif %}><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        <li {%if section == "dashboard" %}class="selected"{% endif %}><a href="{% url 'dashboard' %}">Dashboard</a></li>
         <!--<li {% if section == "stragegy" %}class="selected"{% endif %}><a href="#">Strategy</a></li>-->
-        <li {%if section==
-        "data" %}class="selected"{% endif %}><a href="{% url 'data' %}">Data</a></li>
+        <li {%if section == "data" %}class="selected"{% endif %}><a href="{% url 'data' %}">Data</a></li>
     </ul>
     {% endif %}
     <span class="user">
