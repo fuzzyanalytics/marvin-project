@@ -11,10 +11,10 @@
     <a href="{% url 'dashboard' %}"><span class="logo">Marvinweb</span></a>
     {% if request.user.is_authenticated %}
     <ul class="menu">
-        <li {% if section==
+        <li {%if section==
         "dashboard" %}class="selected"{% endif %}><a href="{% url 'dashboard' %}">Dashboard</a></li>
         <!--<li {% if section == "stragegy" %}class="selected"{% endif %}><a href="#">Strategy</a></li>-->
-        <li {% if section==
+        <li {%if section==
         "data" %}class="selected"{% endif %}><a href="{% url 'data' %}">Data</a></li>
     </ul>
     {% endif %}
@@ -32,6 +32,8 @@
     {% endblock %}
 </div>
 
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css"
+      integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
 <link rel="stylesheet" href="http://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 <script src="http://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>

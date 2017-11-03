@@ -70,9 +70,11 @@ def render_eurusd_mktdata(request):
             start_date = cd["start_date"]
             end_date = cd["end_date"]
 
+    # date_range_form["start_date"] = start_date
+
     graph_data = get_graph_data(start_date, end_date);
 
-    return render(request, "mktdata/data.html", {'date_range_form': date_range_form,
+    return render(request, "mktdata/data.html", {'form': date_range_form,
                                                  'graph': graph_data,
                                                  'start_date': start_date,
                                                  'end_date': end_date})

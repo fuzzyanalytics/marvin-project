@@ -1,13 +1,29 @@
 {% extends "base.html" %}
+{% load widget_tweaks %}
 
 {% block title %}Data{% endblock %}
 
 {% block content %}
 <h1>Mkt Data</h1>
-<form action="." method="post">
-    {{ date_range_form.as_p }}
+<form class="form-inline" action="." method="post" novalidate>
     {% csrf_token %}
-    <p><input type="submit" value="Refresh"></p>
+
+    <div class="form-row align-items-center">
+        <span style="width:10px"> </span>
+        <label for="start_date">{{ form.start_date.label_tag }}</label>
+        <span style="width:10px"> </span>
+        {{ form.start_date }}
+        {% render_field field class="form-control mb-2 mb-sm-0" id="start_date" %}
+        <span style="width:20px"> </span>
+        <label for="end_date">{{ form.end_date.label_tag }}</label>
+        <span style="width:10px"> </span>
+        {{ form.end_date }}
+        <span style="width:20px"> </span>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Refresh</button>
+        </div>
+    </div>
+
 </form>
 {% if graph %}
 <div style="width:600;height:500">
