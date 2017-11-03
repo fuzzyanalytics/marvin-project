@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Data{% endblock %}
+
+{% block content %}
+<h1>Mkt Data</h1>
+<form action="." method="post">
+    {{ date_range_form.as_p }}
+    {% csrf_token %}
+    <p><input type="submit" value="Refresh"></p>
+</form>
+{% if graph %}
+<div style="width:600;height:500">
+    {{ graph|safe }}
+</div>
+{% endif %}
+{% endblock %}
