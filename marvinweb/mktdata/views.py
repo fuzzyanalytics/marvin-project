@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import plotly.graph_objs as go
 import plotly.offline as opy
 from django.contrib.auth.decorators import login_required
@@ -92,12 +93,13 @@ def get_graph_data(startdate, enddate):
     """
 
     # timestamp = Dukaeurusdtick.objects.values_list('bid', flat=True)[:1000]
-    timestamp = Dukaeurusdtick.objects.values_list('bid', flat=True).filter(timestamp__range=(startdate, enddate))
-    timestamp = list(timestamp)
+    data = Dukaeurusdtick.objects.values('timestamp','bid','ask','bid_volume','ask_volume').filter(timestamp__range=(startdate, enddate))
+    df = pd.DataFrame.from_records(data)
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    df.index = df.timestamp
+    #df = df.drop(columns=['timestamp'])
 
-    x = np.array(range(1, len(timestamp)))
-    y = np.array(timestamp)
-    trace1 = go.Scatter(x=x, y=y, marker={'color': 'red', 'symbol': 104, 'size': "10"},
+    trace1 = go.Scatter(y= df.bid, x=df.timestamp, marker={'color': 'red', 'symbol': 104, 'size': "10"},
                         mode="lines", name='1st Trace')
 
     data = go.Data([trace1])
