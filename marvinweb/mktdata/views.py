@@ -62,6 +62,7 @@ def render_eurusd_mktdata(request):
     start_date = end_date.replace(hour=0, minute=0, second=0, microsecond=0)
 
     date_range_form = DateRangeForm()
+    show_volume = True
 
     if request.method == 'POST':
         form = DateRangeForm(request.POST)
@@ -70,10 +71,11 @@ def render_eurusd_mktdata(request):
             cd = form.cleaned_data
             start_date = cd["start_date"]
             end_date = cd["end_date"]
+            show_volume = cd["show_volume"]
 
     # date_range_form["start_date"] = start_date
 
-    graph_data = get_graph_data(start_date, end_date);
+    graph_data = get_graph_data(start_date, end_date, show_volume);
 
     return render(request, "mktdata/data.html", {'form': date_range_form,
                                                  'graph': graph_data,
@@ -84,7 +86,7 @@ def render_eurusd_mktdata(request):
 ########################################################################################################################
 # Private Methods
 ########################################################################################################################
-def get_graph_data(startdate, enddate):
+def get_graph_data(startdate, enddate, show_volume):
     """
     Given a start and end date create a plot.ly graph object from the Dukaeurusdtick data
     :param startdate: the start date to get eurusd data from
@@ -94,16 +96,48 @@ def get_graph_data(startdate, enddate):
 
     # timestamp = Dukaeurusdtick.objects.values_list('bid', flat=True)[:1000]
     data = Dukaeurusdtick.objects.values('timestamp','bid','ask','bid_volume','ask_volume').filter(timestamp__range=(startdate, enddate))
-    df = pd.DataFrame.from_records(data)
-    df["timestamp"] = pd.to_datetime(df["timestamp"])
-    df.index = df.timestamp
-    #df = df.drop(columns=['timestamp'])
+    df = pd.DataFrame.from_records(data,index='timestamp')
 
-    trace1 = go.Scatter(y= df.bid, x=df.timestamp, marker={'color': 'red', 'symbol': 104, 'size': "10"},
-                        mode="lines", name='1st Trace')
-
-    data = go.Data([trace1])
-    layout = go.Layout(title="Data", xaxis={'title': 'Date'}, yaxis={'title': 'Rate'})
+    tradePrice = go.Scatter(y= df.bid, x=df.index,mode="lines", name='Rate')
+    if show_volume:
+        tradeVol = go.Bar(y = df.bid_volume, x=df.index, name='Volume', yaxis='y2')
+        data = go.Data([tradePrice, tradeVol])
+        layout = go.Layout(title="EURUSD Data",
+                           xaxis=dict(title='Time'),
+                           yaxis=dict(title='Rate',
+                                      titlefont=dict(
+                                          color='#1f77b4'
+                                      ),
+                                      tickfont=dict(
+                                          color='#1f77b4'
+                                      ),
+                                      ),
+                           yaxis2=dict(
+                               title='Volume',
+                               titlefont=dict(
+                                   color='#f87f0e'
+                               ),
+                               tickfont=dict(
+                                   color='#f87f0e'
+                               ),
+                               anchor='x',
+                               overlaying='y',
+                               side='right'
+                           ),
+                           )
+    else:
+        data = go.Data([tradePrice])
+        layout = go.Layout(title="EURUSD Data",
+                           xaxis=dict(title='Time'),
+                           yaxis=dict(title='Rate',
+                                titlefont=dict(
+                                  color='#1f77b4'
+                                ),
+                                tickfont=dict(
+                                  color='#1f77b4'
+                                ),
+                                ),
+                           )
     figure = go.Figure(data=data, layout=layout)
     graph = opy.plot(figure, auto_open=False, output_type='div')
     return graph
