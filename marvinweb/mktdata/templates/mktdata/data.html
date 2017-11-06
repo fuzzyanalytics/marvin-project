@@ -25,10 +25,16 @@
     </div>
     <div class="form-row align-items-center">
         <span style="width:5px"> </span>
-         <label class="col-form-label"  for="show_volume">{{ form.show_volume.label_tag }}</label>
+        <label class="col-form-label"  for="show_volume">{{ form.show_volume.label_tag }}</label>
         <span style="width:10px"> </span>
         {{ form.show_volume }}
         {% render_field field value="{{ form.show_volume.value }}" id="show_volume" %}
+
+        <span style="width:5px"> </span>
+        <label class="col-form-label"  for="time_frame">{{ form.show_volume.label_tag }}</label>
+        <span style="width:10px"> </span>
+        {{ form.time_frame }}
+        {% render_field field value="{{ form.time_frame.value }}" id="time_frame" %}
     </div>
 </form>
 <br />
@@ -36,5 +42,10 @@
 <div style="width:100%;height:500">
     {{ graph|safe }}
 </div>
+{% else %}
+<p>
+    No Data in Graph :( Please try an earlier date. <br />
+    Last date with data is {{ last_date_with_data }}
+</p>
 {% endif %}
 {% endblock %}

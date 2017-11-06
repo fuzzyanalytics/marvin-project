@@ -1,3 +1,5 @@
+import datetime
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
@@ -58,11 +60,11 @@ def render_eurusd_mktdata(request):
     otherwise compute the start/end dates from the latest data in the DB
     """
 
-    end_date = Dukaeurusdtick.objects.values_list('timestamp', flat=True).last()
+    end_date = Dukaeurusdtick.objects.values_list('timestamp', flat=True).last() - datetime.timedelta(1)
+    last_date_with_data = end_date;
     start_date = end_date.replace(hour=0, minute=0, second=0, microsecond=0)
-
-
     show_volume = True
+    time_frame = 'Tick'
 
     if request.method == 'POST':
         form = DateRangeForm(request.POST)
@@ -72,38 +74,81 @@ def render_eurusd_mktdata(request):
             start_date = cd["start_date"]
             end_date = cd["end_date"]
             show_volume = cd["show_volume"]
+            time_frame = cd["time_frame"]
 
-    date_range_form = DateRangeForm({'start_date':start_date, 'end_date':end_date, 'show_volume': show_volume})
+    date_range_form = DateRangeForm(
+        {'start_date': start_date, 'end_date': end_date, 'show_volume': show_volume, 'time_frame': time_frame})
 
-    graph_data = get_graph_data(start_date, end_date, show_volume);
+    graph_data = get_graph_data(start_date, end_date, show_volume, time_frame);
 
     return render(request, "mktdata/data.html", {'form': date_range_form,
                                                  'graph': graph_data,
                                                  'start_date': start_date,
-                                                 'end_date': end_date})
+                                                 'end_date': end_date,
+                                                 'last_date_with_data': last_date_with_data})
 
 
 ########################################################################################################################
 # Private Methods
 ########################################################################################################################
-def get_graph_data(startdate, enddate, show_volume):
+def get_graph_data(startdate, enddate, show_volume, time_frame):
     """
     Given a start and end date create a plot.ly graph object from the Dukaeurusdtick data
     :param startdate: the start date to get eurusd data from
     :param enddate: the end date to get eurusd data from
+    :param show_volume: boolean, represents whether to include the volume data in the plot or not
+    :param time_frame: the timeframe which to show the data in (Tick, 1Sec, 3Sec, 10Sec)
     :return: a plot.ly graph object
     """
 
     # timestamp = Dukaeurusdtick.objects.values_list('bid', flat=True)[:1000]
     data = Dukaeurusdtick.objects.values('timestamp', 'bid', 'ask', 'bid_volume', 'ask_volume').filter(
         timestamp__range=(startdate, enddate))
+    if len(data) < 1:
+        return None
+
     df = pd.DataFrame.from_records(data, index='timestamp')
 
-    tradePrice = go.Scatter(y=df.bid, x=df.index, mode="lines", name='Rate')
+    if time_frame == 'Tick':
+        # do nothing. data already in ticks
+        data_bid = df.rename(columns={'bid': 'open'})
+        data_volume = df
+    elif time_frame == '1Sec':
+        data_bid = df['bid'].resample('1S').ohlc()
+        data_volume = df['bid_volume'].resample('1S').sum()
+    elif time_frame == '3Sec':
+        data_bid = df['bid'].resample('3S').ohlc()
+        data_volume = df['bid_volume'].resample('3S').sum()
+    elif time_frame == '10Sec':
+        data_bid = df['bid'].resample('10S').ohlc()
+        data_volume = df['bid_volume'].resample('10S').sum()
+    elif time_frame == '1Min':
+        data_bid = df['bid'].resample('1Min').ohlc()
+        data_volume = df['bid_volume'].resample('1Min').sum()
+    elif time_frame == '5Min':
+        data_bid = df['bid'].resample('5Min').ohlc()
+        data_volume = df['bid_volume'].resample('5Min').sum()
+    elif time_frame == '10Min':
+        data_bid = df['bid'].resample('10Min').ohlc()
+        data_volume = df['bid_volume'].resample('10Min').sum()
+    elif time_frame == '15Min':
+        data_bid = df['bid'].resample('15Min').ohlc()
+        data_volume = df['bid_volume'].resample('15Min').sum()
+    elif time_frame == '30Min':
+        data_bid = df['bid'].resample('30Min').ohlc()
+        data_volume = df['bid_volume'].resample('30Min').sum()
+    elif time_frame == '1H':
+        data_bid = df['bid'].resample('1H').ohlc()
+        data_volume = df['bid_volume'].resample('1H').sum()
+    else:
+        data_bid = df['bid'].resample('1Min').ohlc()
+        data_volume = df['bid_volume'].resample('1Min').sum()
+
+    tradePrice = go.Scatter(y=data_bid["open"], x=data_bid.index, mode="lines", name='Rate')
     if show_volume:
-        tradeVol = go.Bar(y=df.bid_volume, x=df.index, name='Volume', yaxis='y2')
+        tradeVol = go.Bar(y=data_volume, x=data_volume.index, name='Volume', yaxis='y2', opacity=0.7)
         data = go.Data([tradePrice, tradeVol])
-        layout = go.Layout(title="EURUSD Data",
+        layout = go.Layout(title="EURUSD Data ({})".format(time_frame),
                            xaxis=dict(title='Time'),
                            yaxis=dict(title='Rate',
                                       titlefont=dict(
@@ -128,7 +173,7 @@ def get_graph_data(startdate, enddate, show_volume):
                            )
     else:
         data = go.Data([tradePrice])
-        layout = go.Layout(title="EURUSD Data",
+        layout = go.Layout(title="EURUSD Data ({})".format(time_frame),
                            xaxis=dict(title='Time'),
                            yaxis=dict(title='Rate',
                                       titlefont=dict(
