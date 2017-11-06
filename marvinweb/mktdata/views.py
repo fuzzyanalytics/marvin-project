@@ -61,7 +61,7 @@ def render_eurusd_mktdata(request):
     end_date = Dukaeurusdtick.objects.values_list('timestamp', flat=True).last()
     start_date = end_date.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    date_range_form = DateRangeForm()
+
     show_volume = True
 
     if request.method == 'POST':
@@ -73,7 +73,7 @@ def render_eurusd_mktdata(request):
             end_date = cd["end_date"]
             show_volume = cd["show_volume"]
 
-    # date_range_form["start_date"] = start_date
+    date_range_form = DateRangeForm({'start_date':start_date, 'end_date':end_date, 'show_volume': show_volume})
 
     graph_data = get_graph_data(start_date, end_date, show_volume);
 
@@ -95,12 +95,13 @@ def get_graph_data(startdate, enddate, show_volume):
     """
 
     # timestamp = Dukaeurusdtick.objects.values_list('bid', flat=True)[:1000]
-    data = Dukaeurusdtick.objects.values('timestamp','bid','ask','bid_volume','ask_volume').filter(timestamp__range=(startdate, enddate))
-    df = pd.DataFrame.from_records(data,index='timestamp')
+    data = Dukaeurusdtick.objects.values('timestamp', 'bid', 'ask', 'bid_volume', 'ask_volume').filter(
+        timestamp__range=(startdate, enddate))
+    df = pd.DataFrame.from_records(data, index='timestamp')
 
-    tradePrice = go.Scatter(y= df.bid, x=df.index,mode="lines", name='Rate')
+    tradePrice = go.Scatter(y=df.bid, x=df.index, mode="lines", name='Rate')
     if show_volume:
-        tradeVol = go.Bar(y = df.bid_volume, x=df.index, name='Volume', yaxis='y2')
+        tradeVol = go.Bar(y=df.bid_volume, x=df.index, name='Volume', yaxis='y2')
         data = go.Data([tradePrice, tradeVol])
         layout = go.Layout(title="EURUSD Data",
                            xaxis=dict(title='Time'),
@@ -130,13 +131,13 @@ def get_graph_data(startdate, enddate, show_volume):
         layout = go.Layout(title="EURUSD Data",
                            xaxis=dict(title='Time'),
                            yaxis=dict(title='Rate',
-                                titlefont=dict(
-                                  color='#1f77b4'
-                                ),
-                                tickfont=dict(
-                                  color='#1f77b4'
-                                ),
-                                ),
+                                      titlefont=dict(
+                                          color='#1f77b4'
+                                      ),
+                                      tickfont=dict(
+                                          color='#1f77b4'
+                                      ),
+                                      ),
                            )
     figure = go.Figure(data=data, layout=layout)
     graph = opy.plot(figure, auto_open=False, output_type='div')
