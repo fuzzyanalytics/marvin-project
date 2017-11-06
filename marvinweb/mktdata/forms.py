@@ -23,7 +23,7 @@ class DateRangeForm(forms.Form):
     show_volume = forms.BooleanField(required=False)
     time_frame = forms.ChoiceField(choices=DATA_TIME_FRAME,
                                    required=False,
-                                   label='',
+                                   label='Time Frame',
                                    widget=forms.Select({'class': 'select_style',
                                                         'id': 'data_bucket'
                                                         }),
