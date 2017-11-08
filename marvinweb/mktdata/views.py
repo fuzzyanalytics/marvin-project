@@ -1,9 +1,11 @@
 import datetime
+from datetime import datetime as dt
 
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.offline as opy
+import pytz
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render
@@ -60,7 +62,7 @@ def render_eurusd_mktdata(request):
     otherwise compute the start/end dates from the latest data in the DB
     """
 
-    end_date = Dukaeurusdtick.objects.values_list('timestamp', flat=True).last() - datetime.timedelta(1)
+    end_date = Dukaeurusdtick.objects.values_list('timestamp', flat=True).last() - datetime.timedelta(2)
     last_date_with_data = end_date;
     start_date = end_date.replace(hour=0, minute=0, second=0, microsecond=0)
     show_volume = True
@@ -71,8 +73,12 @@ def render_eurusd_mktdata(request):
         if form.is_valid():
             # Form fields passed validation
             cd = form.cleaned_data
-            start_date = cd["start_date"]
-            end_date = cd["end_date"]
+            start_date_date = cd["start_date"]
+            start_date_dt = dt.strptime(start_date_date.strftime('%Y-%m-%d'), '%Y-%m-%d')
+            start_date = pytz.timezone('utc').localize(start_date_dt)
+            end_date_date = cd["end_date"]
+            end_date_dt = dt.combine(end_date_date, dt.max.time())
+            end_date = pytz.timezone('utc').localize(end_date_dt)
             show_volume = cd["show_volume"]
             time_frame = cd["time_frame"]
 
@@ -102,8 +108,7 @@ def get_graph_data(startdate, enddate, show_volume, time_frame):
     """
 
     # timestamp = Dukaeurusdtick.objects.values_list('bid', flat=True)[:1000]
-    data = Dukaeurusdtick.objects.values('timestamp', 'bid', 'ask', 'bid_volume', 'ask_volume').filter(
-        timestamp__range=(startdate, enddate))
+    data = Dukaeurusdtick.objects.values('timestamp', 'bid', 'ask', 'bid_volume', 'ask_volume').filter(timestamp__range=(startdate, enddate))
     if len(data) < 1:
         return None
 
@@ -112,7 +117,7 @@ def get_graph_data(startdate, enddate, show_volume, time_frame):
     if time_frame == 'Tick':
         # do nothing. data already in ticks
         data_bid = df.rename(columns={'bid': 'open'})
-        data_volume = df
+        data_volume = df['bid_volume']
     elif time_frame == '1Sec':
         data_bid = df['bid'].resample('1S').ohlc()
         data_volume = df['bid_volume'].resample('1S').sum()
