@@ -51,6 +51,7 @@ class MktData(LoginRequiredMixin, TemplateView):
         div = opy.plot(figure, auto_open=False, output_type='div')
 
         context['graph'] = div
+        context['section'] = 'data'
 
         return context
 
@@ -91,7 +92,8 @@ def render_eurusd_mktdata(request):
                                                  'graph': graph_data,
                                                  'start_date': start_date,
                                                  'end_date': end_date,
-                                                 'last_date_with_data': last_date_with_data})
+                                                 'last_date_with_data': last_date_with_data,
+                                                 'section': 'data'})
 
 
 ########################################################################################################################
@@ -108,7 +110,8 @@ def get_graph_data(startdate, enddate, show_volume, time_frame):
     """
 
     # timestamp = Dukaeurusdtick.objects.values_list('bid', flat=True)[:1000]
-    data = Dukaeurusdtick.objects.values('timestamp', 'bid', 'ask', 'bid_volume', 'ask_volume').filter(timestamp__range=(startdate, enddate))
+    data = Dukaeurusdtick.objects.values('timestamp', 'bid', 'ask', 'bid_volume', 'ask_volume').filter(
+        timestamp__range=(startdate, enddate))
     if len(data) < 1:
         return None
 
