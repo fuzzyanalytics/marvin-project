@@ -8,6 +8,7 @@
 
 import csv
 import errno
+import logging
 import os
 import re
 import sys
@@ -31,7 +32,7 @@ def insertRowsIntDB(size, data):
                  "VALUES ")
     add_ticks = add_ticks + "(%s, %s, %s, %s, %s)," * size
     add_ticks = add_ticks[:-1]
-
+    logging.info("running bulk insert query of size: {}".format(size));
     # Insert tick data
     cursor.execute(add_ticks, data)
     emp_no = cursor.lastrowid
@@ -61,6 +62,7 @@ def deleteDaysDataFromDb(dt):
     cursor = cnx.cursor()
 
     delete_ticks = ("DELETE FROM dukaeurusdtick where timestamp >= %s and timestamp < %s")
+    logging.info("running query: DELETE FROM dukaeurusdtick where timestamp >= {} and timestamp < {}".format(startDate, endDate));
     # delete tick data
     cursor.execute(delete_ticks, (startDate, endDate))
     emp_no = cursor.lastrowid
@@ -80,6 +82,7 @@ def insertDataIntoDB(dt, file):
     """
 
     # run through files in order and input data into the DB
+    logging.info("Trying to insert contents of {} into DB".format(file))
     if file.endswith(".csv"):
         deleteDaysDataFromDb(dt)
         with open(file, 'r') as f:
@@ -114,8 +117,16 @@ def insertDataIntoDB(dt, file):
 
 
 def downloadDateRangeAndInsertIntoDB(startDate, endDate, tempDir) -> None:
+    """
+    download hist tick data from dukascopy using duka module
+    :param startDate:
+    :param endDate:
+    :param tempDir:
+    :return:
+    """
     # this will give you a list containing all of the dates
     dd = [startDate + timedelta(days=x) for x in range((endDate - startDate).days + 1)]
+    logging.info("running for dt: {}".format(str(dd)))
 
     for dt in dd:
         print(dt)
@@ -123,6 +134,8 @@ def downloadDateRangeAndInsertIntoDB(startDate, endDate, tempDir) -> None:
         # e.g. EURUSD-2017_10_01-2017_10_01
         dtUnderBars = dt.strftime('%Y_%m_%d')
         filename = "{}-{}-{}.csv".format(CCYPAIR, dtUnderBars, dtUnderBars)
+        logging.info("filename = {}".format(filename))
+        logging.info("Calling duka module")
         sts = call("duka " + args)
         # deleteDaysDataFromDb(dt)
         fullpath = os.path.join(tempDir, filename)
@@ -133,6 +146,7 @@ def downloadDateRangeAndInsertIntoDB(startDate, endDate, tempDir) -> None:
             print()
         else:
             print("!! {} does not exist".format(fullpath))
+            logging.waring("!! {} does not exist".format(fullpath))
 
 
 def printUsageStr() -> None:
@@ -140,33 +154,55 @@ def printUsageStr() -> None:
     Prints the usage string of this utility.
     :return: None
     """
-    print("Usage: ImportHistoricalDataDukascopy StartDate EndDate");
+    print("Usage: ImportHistoricalDataDukascopy [StartDate EndDate]");
+    print("*      StartDate and EndDate are optional. If set however, both must be set.")
+    print("*       If omitted the default EndDate will be set to today and StartDate to T-2\n");
     print("*      StartDate and EndDate should be in format YYYYMMDD");
     print("*      EndDate should come after StartDate");
 
 
-if __name__ == '__main__':
+def main():
+    """
+    Main func when program run standalone
+    :return:
+    """
+    logging.basicConfig(filename='D:\\TEMP\\logs\\ImportHistoricalDataDukascopy.log', filemode='w', level=logging.DEBUG)
     numCommandArgs = len(sys.argv)
+
+    today = date.today()
+    end_date_str = today.strftime("%Y%m%d")
+    yest = today - timedelta(2)
+    start_date_str = yest.strftime("%Y%m%d")
+
     if numCommandArgs <= 1:
+        # use defaults if not parameters are passed
+        pass
+    elif numCommandArgs == 1:
         printUsageStr()
         exit(1)
+    else:
+        start_date_str = sys.argv[1]
+        end_date_str = sys.argv[2]
 
-    startDateStr = sys.argv[1]
-    endDateStr = sys.argv[2]
+    logging.info("start date: {}".format(start_date_str))
+    logging.info("end date: {}".format(end_date_str))
 
     pattern = re.compile(r"^[0-9]{8}$")
-    matchStart = pattern.match(startDateStr)
-    matchEnd = pattern.match(endDateStr)
-    if not matchStart:
+    match_start = pattern.match(start_date_str)
+    match_end = pattern.match(end_date_str)
+    if not match_start:
         print("Error. StartDate in wrong format")
+        logging.error("Error. StartDate in wrong format")
         printUsageStr()
         exit(1)
-    if not matchEnd:
+    if not match_end:
         print("Error. EndDate in wrong format")
+        logging.error("Error. EndDate in wrong format")
         printUsageStr()
         exit(1)
-    if int(startDateStr) > int(endDateStr):
+    if int(start_date_str) > int(end_date_str):
         print("Error: EndDate is before StartDate")
+        logging.error("Error: EndDate is before StartDate")
         printUsageStr()
         exit(1)
 
@@ -178,7 +214,11 @@ if __name__ == '__main__':
         if e.errno != errno.EEXIST:
             raise
 
-    startDate = date(int(startDateStr[0:4]), int(startDateStr[4:6]), int(startDateStr[6:8]))
-    endDate = date(int(endDateStr[0:4]), int(endDateStr[4:6]), int(endDateStr[6:8]))
+    startDate = date(int(start_date_str[0:4]), int(start_date_str[4:6]), int(start_date_str[6:8]))
+    endDate = date(int(end_date_str[0:4]), int(end_date_str[4:6]), int(end_date_str[6:8]))
 
     downloadDateRangeAndInsertIntoDB(startDate, endDate, tempDir)
+
+
+if __name__ == '__main__':
+    main()
