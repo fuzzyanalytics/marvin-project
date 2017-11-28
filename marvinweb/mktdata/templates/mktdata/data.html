@@ -5,7 +5,7 @@
 
 {% block content %}
 <h1>Mkt Data</h1>
-<form    action="." method="post" novalidate>
+<form  id="data_form"  action="." method="post" novalidate>
     {% csrf_token %}
 
     <div class="form-row align-items-center">
@@ -31,10 +31,10 @@
         {% render_field field value="{{ form.show_volume.value }}" id="show_volume" %}
 
         <span style="width:5px"> </span>
-        <label class="col-form-label"  for="time_frame">{{ form.time_frame.label_tag }}</label>
+        <label class="col-form-label" for="time_frame">{{ form.time_frame.label_tag }}</label>
         <span style="width:10px"> </span>
         {{ form.time_frame }}
-        {% render_field field value="{{ form.time_frame.value }}" id="time_frame" %}
+        {% render_field field value="{{ form.time_frame.value }}" onChange="form.submit();" id="time_frame" %}
     </div>
 </form>
 <br />

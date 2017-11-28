@@ -38,6 +38,8 @@
 <script>
 $(document).ready(function() {
     $('.datepicker').datepicker({dateFormat: 'yy-mm-dd'});
+    $("select[name=time_frame").on("change", function() {$('#data_form').submit()});
+    $("input[name=show_volume").on("change", function() {$('#data_form').submit()});
 });
 
 </script>

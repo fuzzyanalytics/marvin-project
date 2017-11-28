@@ -146,7 +146,7 @@ def downloadDateRangeAndInsertIntoDB(startDate, endDate, tempDir) -> None:
             print()
         else:
             print("!! {} does not exist".format(fullpath))
-            logging.waring("!! {} does not exist".format(fullpath))
+            logging.warning("!! {} does not exist".format(fullpath))
 
 
 def printUsageStr() -> None:
@@ -171,7 +171,7 @@ def main():
 
     today = date.today()
     end_date_str = today.strftime("%Y%m%d")
-    yest = today - timedelta(2)
+    yest = today - timedelta(4)
     start_date_str = yest.strftime("%Y%m%d")
 
     if numCommandArgs <= 1:
